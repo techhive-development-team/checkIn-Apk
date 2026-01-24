@@ -2,8 +2,14 @@ import React, { useRef, useState } from 'react';
 import { Camera, useCameraDevice, useCameraPermission } from 'react-native-vision-camera';
 import { StyleSheet, View, TouchableOpacity, Text, Animated } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useNavigation } from '@react-navigation/native';
 
-function CameraScreen() {
+interface CameraScreenProps {
+  navigation: any;
+}
+
+function CameraScreen({ navigation }: CameraScreenProps) {
+  const navigateTo = useNavigation();
   const { hasPermission, requestPermission } = useCameraPermission();
   const cameraRef = useRef<Camera>(null);
   const [facing, setFacing] = useState<'front' | 'back'>('back');
@@ -15,7 +21,13 @@ function CameraScreen() {
       const photo = await cameraRef.current?.takePhoto({
         flash: flash,
       });
-      console.log('Photo captured:', photo);
+      if (photo) {
+        console.log('Photo captured:', photo);
+        // Navigate to ReviewScreen with the photo path
+        navigateTo.navigate('Review', {
+          imagePath: `file://${photo.path}`,
+        });
+      }
     } catch (error) {
       console.error('Failed to take photo:', error);
     }
@@ -72,25 +84,22 @@ function CameraScreen() {
         photo={true}
       />
 
-      {/* Top Controls */}
       <View style={styles.topControls}>
         <TouchableOpacity style={styles.iconButton} onPress={toggleFlash}>
           <Icon name={getFlashIcon()} size={28} color="#fff" />
         </TouchableOpacity>
-        
+
         <View style={styles.topSpacer} />
-        
+
         <TouchableOpacity style={styles.iconButton} onPress={toggleCamera}>
           <Icon name="camera-reverse-outline" size={28} color="#fff" />
         </TouchableOpacity>
       </View>
 
-      {/* Bottom Controls */}
       <View style={styles.bottomControls}>
         <View style={styles.captureContainer}>
 
-          {/* Capture Button */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.captureButton}
             onPress={takePhoto}
             activeOpacity={0.7}

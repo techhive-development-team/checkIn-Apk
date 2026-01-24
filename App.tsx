@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import SplashScreen from './src/screens/SplashScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import CameraScreen from './src/screens/CameraScreen';
+import ReviewScreen from './src/screens/ReviewScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -15,6 +16,7 @@ export default function App() {
         <Stack.Screen name="Splash" component={SplashScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Camera" component={CameraScreen} />
+        <Stack.Screen name="Review" component={ReviewScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
