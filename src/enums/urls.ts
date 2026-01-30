@@ -5,4 +5,5 @@ export const API_URLS = {
     ATTENDANCE: '/attendance',
 }
 
-export const baseUrl = Config.API_BASE_URL;
+export const baseUrl = 'http://localhost:3000';
+console.log('API Base URL:', baseUrl);
