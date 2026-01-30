@@ -5,7 +5,7 @@ const exec = async (endPoint: RequestInfo, config?: RequestInit) => {
     const token = await AsyncStorage.getItem("token");
     const headers = {
         "content-type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: token ? `Bearer ${token}` : "" ,
     };
     const response = await fetch(`${baseUrl}${endPoint}`, {
         ...config,

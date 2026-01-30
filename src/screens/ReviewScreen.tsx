@@ -126,20 +126,20 @@ const ReviewScreen: React.FC<ReviewScreenProps> = ({ route }) => {
         action: actionType,
       };
 
-      const response = await client.exec('/api/attendance/submit', {
-        method: 'POST',
-        body: JSON.stringify(submitData),
-      });
+      // const response = await client.exec('/api/attendance/submit', {
+      //   method: 'POST',
+      //   body: JSON.stringify(submitData),
+      // // });
 
-      if (response.success) {
-        await AsyncStorage.removeItem('token');
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'LoginScreen' }],
-        });
-      } else {
-        Alert.alert('Error', 'Failed to submit attendance');
-      }
+      // if (response.success) {
+      //   await AsyncStorage.removeItem('token');
+      //   navigation.reset({
+      //     index: 0,
+      //     routes: [{ name: 'LoginScreen' }],
+      //   });
+      // } else {
+      //   Alert.alert('Error', 'Failed to submit attendance');
+      // }
     } catch (error) {
       Alert.alert('Error', 'An error occurred while submitting');
       console.log('Submit error:', error);

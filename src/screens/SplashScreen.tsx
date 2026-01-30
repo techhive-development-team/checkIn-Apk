@@ -1,15 +1,22 @@
-import React, { useEffect } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet, Image } from 'react-native';
+import { AuthContext } from '../hooks/AuthContext';
 
 export default function SplashScreen({ navigation }: any) {
+  const { userInfo } = useContext(AuthContext);
+
   useEffect(() => {
     const timer = setTimeout(() => {
+      // if (userInfo?.token) {
+      //   navigation.replace('Camera'); // logged-in user
+      // } else {
+      //   navigation.replace('Login'); // not logged-in
+      // }
       navigation.replace('Login');
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, []);
-
+  }, [userInfo]);
   return (
     <View style={styles.container}>
 
