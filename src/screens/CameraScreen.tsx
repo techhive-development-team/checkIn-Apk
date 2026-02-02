@@ -3,6 +3,8 @@ import { Camera, useCameraDevice, useCameraPermission } from 'react-native-visio
 import { StyleSheet, View, TouchableOpacity, Text, Animated } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
+import { useContext } from 'react';
+import { AuthContext } from '../hooks/AuthContext';
 
 interface CameraScreenProps {
   navigation: any;
@@ -15,6 +17,7 @@ function CameraScreen({ navigation }: CameraScreenProps) {
   const [facing, setFacing] = useState<'front' | 'back'>('back');
   const [flash, setFlash] = useState<'off' | 'on' | 'auto'>('off');
   const device = useCameraDevice(facing);
+  const { logout } = useContext(AuthContext);
 
   const takePhoto = async () => {
     try {
@@ -90,6 +93,9 @@ function CameraScreen({ navigation }: CameraScreenProps) {
         </TouchableOpacity>
 
         <View style={styles.topSpacer} />
+        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+    <Icon name="log-out-outline" size={22} color="#fff" />
+  </TouchableOpacity>
 
         <TouchableOpacity style={styles.iconButton} onPress={toggleCamera}>
           <Icon name="camera-reverse-outline" size={28} color="#fff" />
@@ -221,6 +227,16 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.5)',
   },
+  //temporary
+  logoutButton: {
+  width: 44,
+  height: 44,
+  borderRadius: 22,
+  backgroundColor: 'rgba(255, 0, 0, 0.6)',
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginHorizontal: 8,
+},
 });
 
 export default CameraScreen;
