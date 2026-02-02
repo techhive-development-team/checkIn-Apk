@@ -7,19 +7,17 @@ export default function SplashScreen({ navigation }: any) {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      // if (userInfo?.token) {
-      //   navigation.replace('Camera'); // logged-in user
-      // } else {
-      //   navigation.replace('Login'); // not logged-in
-      // }
-      navigation.replace('Login');
+      if (userInfo?.token) {
+        navigation.replace('Camera');
+      } else {
+        navigation.replace('Login');
+      }
     }, 2000);
 
     return () => clearTimeout(timer);
   }, [userInfo]);
   return (
     <View style={styles.container}>
-
       <Text style={styles.title}>TechHive</Text>
 
       <ActivityIndicator size="large" color="#4f46e5" />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Image,
@@ -16,7 +16,9 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import Geolocation from 'react-native-geolocation-service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { client } from '../hooks/client';
+import { attendanceRepository } from '../repositories/attendanceRepository';
+import { fileToBase64 } from '../lib/commonUtil';
+import { AuthContext } from '../hooks/AuthContext';
 // Import icons from react-native-vector-icons or use any icon library you prefer
 // import Icon from 'react-native-vector-icons/Feather';
 
@@ -31,23 +33,32 @@ const ReviewScreen: React.FC<ReviewScreenProps> = ({ route }) => {
   const [location, setLocation] = useState('Getting location...');
   const [currentTime, setCurrentTime] = useState('');
   const [currentDate, setCurrentDate] = useState('');
-  const [actionType, setActionType] = useState<'checkIn' | 'checkOut'>('checkIn');
+  const [actionType, setActionType] = useState<'checkIn' | 'checkOut'>(
+    'checkIn',
+  );
   const [loading, setLoading] = useState(false);
+  const [isStatusLoading, setIsStatusLoading] = useState(true);
   const imagePath = route?.params?.imagePath;
+
+  const { logout } = useContext(AuthContext);
 
   useEffect(() => {
     const now = new Date();
-    setCurrentTime(now.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    }));
-    setCurrentDate(now.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    }));
+    setCurrentTime(
+      now.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      }),
+    );
+    setCurrentDate(
+      now.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      }),
+    );
 
     requestLocationPermission();
     checkActionType();
@@ -64,7 +75,7 @@ const ReviewScreen: React.FC<ReviewScreenProps> = ({ route }) => {
             buttonNeutral: 'Ask Me Later',
             buttonNegative: 'Cancel',
             buttonPositive: 'OK',
-          }
+          },
         );
         if (granted === PermissionsAndroid.RESULTS.GRANTED) {
           getCurrentLocation();
@@ -82,11 +93,11 @@ const ReviewScreen: React.FC<ReviewScreenProps> = ({ route }) => {
 
   const getCurrentLocation = () => {
     Geolocation.getCurrentPosition(
-      (position) => {
+      position => {
         const { latitude, longitude } = position.coords;
         setLocation(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
       },
-      (error) => {
+      error => {
         console.log('Geolocation error:', error);
         setLocation('Unable to get location');
         Alert.alert('Error', `Unable to get location: ${error.message}`);
@@ -96,17 +107,29 @@ const ReviewScreen: React.FC<ReviewScreenProps> = ({ route }) => {
         timeout: 15000,
         maximumAge: 10000,
         forceRequestLocation: true,
-      }
+      },
     );
   };
 
   const checkActionType = async () => {
     try {
-      const response = await client.exec('/api/attendance/status');
-      setActionType(response.lastAction === 'checkIn' ? 'checkOut' : 'checkIn');
+      setIsStatusLoading(true);
+      const response = await attendanceRepository.getStatus();
+
+      console.log('Backend Data:', response.data);
+
+      const data = response.data;
+
+      if (data && data.checkInTime && !data.checkOutTime) {
+        setActionType('checkOut');
+      } else {
+        setActionType('checkIn');
+      }
     } catch (error) {
       console.log('Error checking status:', error);
       setActionType('checkIn');
+    } finally {
+      setIsStatusLoading(false);
     }
   };
 
@@ -115,34 +138,43 @@ const ReviewScreen: React.FC<ReviewScreenProps> = ({ route }) => {
   };
 
   const handleSubmit = async () => {
+    if (!imagePath || location.includes('Getting')) return;
+
     setLoading(true);
     try {
-      const [lat, lon] = location.split(',').map((l) => l.trim());
-      const submitData = {
-        image: imagePath,
-        latitude: lat,
-        longitude: lon,
-        timestamp: currentTime,
-        action: actionType,
-      };
+      const base64Image = await fileToBase64(imagePath);
 
-      // const response = await client.exec('/api/attendance/submit', {
-      //   method: 'POST',
-      //   body: JSON.stringify(submitData),
-      // // });
+      const payload =
+        actionType === 'checkIn'
+          ? {
+              checkInLocation: location,
+              checkInPhoto: base64Image,
+            }
+          : {
+              checkOutLocation: location,
+              checkOutPhoto: base64Image,
+            };
 
-      // if (response.success) {
-      //   await AsyncStorage.removeItem('token');
-      //   navigation.reset({
-      //     index: 0,
-      //     routes: [{ name: 'LoginScreen' }],
-      //   });
-      // } else {
-      //   Alert.alert('Error', 'Failed to submit attendance');
-      // }
-    } catch (error) {
-      Alert.alert('Error', 'An error occurred while submitting');
-      console.log('Submit error:', error);
+      console.log('Final Payload being sent:', payload);
+
+      await attendanceRepository.createAttendance(payload);
+
+      Alert.alert(
+        'Success',
+        `Successfully ${
+          actionType === 'checkIn' ? 'Checked In' : 'Checked Out'
+        }.`,
+        [
+          {
+            text: 'OK',
+            onPress: async () => {
+              await logout();
+            },
+          },
+        ],
+      );
+    } catch (error: any) {
+      Alert.alert('Error', error?.response?.data?.message || 'Update failed');
     } finally {
       setLoading(false);
     }
@@ -152,16 +184,16 @@ const ReviewScreen: React.FC<ReviewScreenProps> = ({ route }) => {
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1e293b" />
 
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Review Attendance</Text>
-        <Text style={styles.headerSubtitle}>Please confirm your details</Text>
+        <Text style={styles.headerSubtitle}>
+          Confirming your {actionType === 'checkIn' ? 'Check In' : 'Check Out'}
+        </Text>
       </View>
 
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
       >
         {/* Image Preview Card */}
         <View style={styles.imageCard}>
@@ -175,49 +207,60 @@ const ReviewScreen: React.FC<ReviewScreenProps> = ({ route }) => {
             )}
             <View style={styles.imageOverlay}>
               <View style={styles.badge}>
-                {/* Replace with Icon component: <Icon name="camera" size={14} color="#fff" /> */}
-                <Text style={styles.badgeIcon}>📷</Text>
-                <Text style={styles.badgeText}>Preview</Text>
+                <Text style={styles.badgeText}>
+                  {actionType === 'checkIn'
+                    ? '📍 Check In Photo'
+                    : '🚪 Check Out Photo'}
+                </Text>
               </View>
             </View>
           </View>
 
           <TouchableOpacity
             style={styles.retakeButton}
-            onPress={handleRetakePhoto}
-            activeOpacity={0.7}
+            onPress={() => navigation.goBack()}
           >
-            {/* Replace with Icon component: <Icon name="camera" size={18} color="#6366f1" /> */}
-            <Text style={styles.retakeIcon}>📷</Text>
-            <Text style={styles.retakeText}>Retake Photo</Text>
+            <Text style={styles.retakeText}>📷 Retake Photo</Text>
           </TouchableOpacity>
         </View>
 
         {/* Info Cards */}
         <View style={styles.infoSection}>
-          {/* Location Card */}
+          <View
+            style={[
+              styles.infoCard,
+              { borderColor: '#6366f1', borderWidth: 1 },
+            ]}
+          >
+            <View style={[styles.iconCircle, { backgroundColor: '#eef2ff' }]}>
+              <Text style={styles.iconEmoji}>
+                {actionType === 'checkIn' ? '🆕' : '🏁'}
+              </Text>
+            </View>
+            <View style={styles.infoContent}>
+              <Text style={styles.infoLabel}>Action Detected</Text>
+              <Text style={[styles.infoValue, { color: '#6366f1' }]}>
+                {actionType === 'checkIn' ? 'Check In' : 'Check Out'}
+              </Text>
+            </View>
+          </View>
+
           <View style={styles.infoCard}>
             <View style={styles.iconCircle}>
-              {/* Replace with Icon component: <Icon name="map-pin" size={20} color="#6366f1" /> */}
               <Text style={styles.iconEmoji}>📍</Text>
             </View>
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Location</Text>
               {location === 'Getting location...' ? (
-                <View style={styles.loadingRow}>
-                  <ActivityIndicator size="small" color="#6366f1" />
-                  <Text style={styles.loadingText}>Getting location...</Text>
-                </View>
+                <ActivityIndicator size="small" color="#6366f1" />
               ) : (
                 <Text style={styles.infoValue}>{location}</Text>
               )}
             </View>
           </View>
 
-          {/* Time Card */}
           <View style={styles.infoCard}>
             <View style={styles.iconCircle}>
-              {/* Replace with Icon component: <Icon name="clock" size={20} color="#6366f1" /> */}
               <Text style={styles.iconEmoji}>🕐</Text>
             </View>
             <View style={styles.infoContent}>
@@ -228,76 +271,21 @@ const ReviewScreen: React.FC<ReviewScreenProps> = ({ route }) => {
           </View>
         </View>
 
-        {/* Action Type Toggle */}
-        <View style={styles.toggleSection}>
-          <Text style={styles.toggleLabel}>Action Type</Text>
-          <View style={styles.toggleContainer}>
-            <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                actionType === 'checkIn' && styles.toggleButtonActive,
-              ]}
-              onPress={() => setActionType('checkIn')}
-              activeOpacity={0.7}
-            >
-              {/* Replace with Icon component: <Icon name="check-circle" size={20} color={...} /> */}
-              <Text style={styles.toggleIcon}>
-                {actionType === 'checkIn' ? '✓' : '○'}
-              </Text>
-              <Text
-                style={[
-                  styles.toggleButtonText,
-                  actionType === 'checkIn' && styles.toggleButtonTextActive,
-                ]}
-              >
-                Check In
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.toggleButton,
-                actionType === 'checkOut' && styles.toggleButtonActive,
-              ]}
-              onPress={() => setActionType('checkOut')}
-              activeOpacity={0.7}
-            >
-              {/* Replace with Icon component: <Icon name="log-out" size={20} color={...} /> */}
-              <Text style={styles.toggleIcon}>
-                {actionType === 'checkOut' ? '→' : '○'}
-              </Text>
-              <Text
-                style={[
-                  styles.toggleButtonText,
-                  actionType === 'checkOut' && styles.toggleButtonTextActive,
-                ]}
-              >
-                Check Out
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
         {/* Submit Button */}
         <TouchableOpacity
           style={[
             styles.submitButton,
-            loading && styles.submitButtonDisabled,
+            (loading || isStatusLoading) && styles.submitButtonDisabled,
           ]}
           onPress={handleSubmit}
-          disabled={loading}
-          activeOpacity={0.8}
+          disabled={loading || isStatusLoading}
         >
-          {loading ? (
+          {loading || isStatusLoading ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (
-            <>
-              <Text style={styles.submitButtonText}>
-                Confirm {actionType === 'checkIn' ? 'Check In' : 'Check Out'}
-              </Text>
-              {/* Replace with Icon component: <Icon name="check-circle" size={20} color="#fff" /> */}
-              <Text style={styles.submitIcon}>✓</Text>
-            </>
+            <Text style={styles.submitButtonText}>
+              Confirm {actionType === 'checkIn' ? 'Check In' : 'Check Out'}
+            </Text>
           )}
         </TouchableOpacity>
       </ScrollView>

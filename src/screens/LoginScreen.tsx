@@ -1,7 +1,9 @@
 import React, { useContext, useState } from 'react';
-import { View, Text, StyleSheet, TextInput, Button } from 'react-native';
-import { useNavigation, NavigationProp } from '@react-navigation/native';
+import { View, Text, StyleSheet, TextInput, Button, Alert } from 'react-native';
+import { useNavigation, NavigationProp, CommonActions } from '@react-navigation/native';
 import { AuthContext } from '../hooks/AuthContext';
+import { LoginSchema } from '../components/LoginValidation';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -9,8 +11,39 @@ export default function LoginScreen() {
   const { login, isLoading } = useContext(AuthContext);
   const navigation = useNavigation<NavigationProp<any>>();
 
+  // const handleLogin = async () => {
+  //   try {
+  //     await LoginSchema.validate({ email, password });
+  //     await login(email, password);
+  //   } catch (err: any) {
+  //     Alert.alert('Validation Error', err.message);
+  //   }
+  // };
+
   const handleLogin = async () => {
-    await login(email, password);
+    try {
+      await LoginSchema.validate({ email, password });
+      await login(email, password);
+      const lastAction = await AsyncStorage.getItem('lastAction');
+
+      if (lastAction === 'checkIn') {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'Camera' }],
+          }),
+        );
+      } else {
+        navigation.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'Camera' }],
+          }),
+        );
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err.message || 'Login failed');
+    }
   };
 
   return (
@@ -23,12 +56,13 @@ export default function LoginScreen() {
         onChangeText={setEmail}
         style={styles.input}
         autoCapitalize="none"
+        keyboardType="email-address"
       />
       <TextInput
         placeholder="Password"
         secureTextEntry
         value={password}
-        style= {styles.input}
+        style={styles.input}
         onChangeText={setPassword}
       />
 

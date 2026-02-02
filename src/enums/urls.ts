@@ -5,5 +5,5 @@ export const API_URLS = {
     ATTENDANCE: '/attendance',
 }
 
-export const baseUrl = 'http://localhost:3000';
-console.log('API Base URL:', baseUrl);
+export const baseURL = 'http://10.0.2.2:3000';
+console.log('API Base URL:', baseURL);

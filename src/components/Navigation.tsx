@@ -24,14 +24,14 @@ export default function Navigation() {
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {/* {!userInfo?.token ? ( */}
+        {!userInfo?.token ? (
           <Stack.Screen name="Login" component={LoginScreen} />
-        {/* ) : ( */}
-          {/* <> */}
+        ) : (
+          <>
             <Stack.Screen name="Camera" component={CameraScreen} />
             <Stack.Screen name="Review" component={ReviewScreen} />
-          {/* </> */}
-        {/* )} */}
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

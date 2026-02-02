@@ -1,12 +1,10 @@
 import React, { createContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
 import { Alert } from 'react-native';
-import { baseUrl } from '../enums/urls';
+import { authRepository } from '../repositories/authRepository';
 
 interface UserInfo {
   token: string;
-  message?: string;
   [key: string]: any;
 }
 
@@ -30,29 +28,29 @@ export const AuthContext = createContext<AuthContextProps>({
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const res = await axios.post<UserInfo>(`${baseUrl}/auth/login`, {
-        email,
-        password,
-      });
+      const res = await authRepository.login({ email, password });
 
-      const data = res.data;
+      const token = res?.data?.token;
+      if (!token) throw new Error('Token missing');
 
-      await AsyncStorage.setItem('userInfo', JSON.stringify(data));
-      await AsyncStorage.setItem('token', data.token);
+      const user = { token, ...res.data };
 
-      setUserInfo(data);
+      await AsyncStorage.setItem('token', token);
+      await AsyncStorage.setItem('userInfo', JSON.stringify(user));
 
-      console.log('Login success:', data);
+      setUserInfo(user);
+
+      console.log('✅ Login success');
     } catch (error: any) {
-      console.log('Login failed:', error.response?.data || error.message);
+      console.log('❌ Login error:', error?.response?.data || error.message);
       Alert.alert(
         'Login Failed',
-        error.response?.data?.message || 'Please try again'
+        error?.response?.data?.message || error.message,
       );
     } finally {
       setIsLoading(false);
@@ -60,14 +58,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   };
 
   const logout = async () => {
-    await AsyncStorage.removeItem('userInfo');
-    await AsyncStorage.removeItem('token');
+    await AsyncStorage.multiRemove(['token', 'userInfo']);
     setUserInfo(null);
+    console.log('✅ Logged out');
   };
 
   const loadUser = async () => {
     const storedUser = await AsyncStorage.getItem('userInfo');
-    if (storedUser) setUserInfo(JSON.parse(storedUser));
+    if (storedUser) {
+      setUserInfo(JSON.parse(storedUser));
+    }
   };
 
   useEffect(() => {
