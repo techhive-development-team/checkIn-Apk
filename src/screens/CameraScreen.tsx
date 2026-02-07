@@ -5,13 +5,24 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import { useContext } from 'react';
 import { AuthContext } from '../hooks/AuthContext';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
+type RootStackParamList = {
+  Login: undefined;
+  Camera: undefined;
+  Review: {
+    imagePath: string;
+  };
+};
 
 interface CameraScreenProps {
   navigation: any;
 }
 
+type CameraNavProp = NativeStackNavigationProp<RootStackParamList, 'Camera'>;
+
 function CameraScreen({ navigation }: CameraScreenProps) {
-  const navigateTo = useNavigation();
+  const navigateTo = useNavigation<CameraNavProp>();
   const { hasPermission, requestPermission } = useCameraPermission();
   const cameraRef = useRef<Camera>(null);
   const [facing, setFacing] = useState<'front' | 'back'>('back');
@@ -94,8 +105,8 @@ function CameraScreen({ navigation }: CameraScreenProps) {
 
         <View style={styles.topSpacer} />
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-    <Icon name="log-out-outline" size={22} color="#fff" />
-  </TouchableOpacity>
+          <Icon name="log-out-outline" size={22} color="#fff" />
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.iconButton} onPress={toggleCamera}>
           <Icon name="camera-reverse-outline" size={28} color="#fff" />
@@ -229,14 +240,14 @@ const styles = StyleSheet.create({
   },
   //temporary
   logoutButton: {
-  width: 44,
-  height: 44,
-  borderRadius: 22,
-  backgroundColor: 'rgba(255, 0, 0, 0.6)',
-  justifyContent: 'center',
-  alignItems: 'center',
-  marginHorizontal: 8,
-},
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 8,
+  },
 });
 
 export default CameraScreen;

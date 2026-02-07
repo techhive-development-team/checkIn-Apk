@@ -4,9 +4,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useContext } from 'react';
 
 import { AuthContext } from '../hooks/AuthContext';
-import LoginScreen from '../screens/LoginScreen';
+// import LoginScreen from '../screens/LoginScreen';
 import CameraScreen from '../screens/CameraScreen';
 import ReviewScreen from '../screens/ReviewScreen';
+import LoginScreen from '../features/Login/LoginScreen';
 
 type RootStackParamList = {
   Login: undefined;
@@ -18,7 +19,7 @@ type RootStackParamList = {
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-export default function Navigation() {
+export default function RootNavigator() {
   const { userInfo } = useContext(AuthContext);
 
   return (

@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { View, Text, StyleSheet, TextInput, Button, Alert } from 'react-native';
 import { useNavigation, NavigationProp, CommonActions } from '@react-navigation/native';
 import { AuthContext } from '../hooks/AuthContext';
-import { LoginSchema } from '../components/LoginValidation';
+// import { LoginSchema } from '../components/LoginValidation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen() {
@@ -22,7 +22,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     try {
-      await LoginSchema.validate({ email, password });
+      // await LoginSchema.validate({ email, password });
       await login(email, password);
       const lastAction = await AsyncStorage.getItem('lastAction');
 
@@ -49,7 +49,6 @@ export default function LoginScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>
-
       <TextInput
         placeholder="Email"
         value={email}

@@ -7,7 +7,7 @@ const login = async (data: LoginFormData) => {
 
   return await client.exec(API_URLS.LOGIN, {
     method: 'post',
-    data, //body: JSON.stringify(data),
+    data,
   });
 };
 
