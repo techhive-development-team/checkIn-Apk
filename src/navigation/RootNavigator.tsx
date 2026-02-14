@@ -4,10 +4,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useContext } from 'react';
 
 import { AuthContext } from '../hooks/AuthContext';
-// import LoginScreen from '../screens/LoginScreen';
-import CameraScreen from '../screens/CameraScreen';
-import ReviewScreen from '../screens/ReviewScreen';
 import LoginScreen from '../features/Login/LoginScreen';
+import CameraScreen from '../features/Camera/CameraScreen';
+import ReviewScreen from '../features/Review/ReviewScreen';
 
 type RootStackParamList = {
   Login: undefined;

@@ -1,5 +1,6 @@
-import { LoginFormData, LoginSchema,  } from "../components/LoginValidation";
 import { API_URLS } from "../enums/urls";
+import { LoginFormData } from "../features/Login/Login.form";
+import { LoginSchema } from "../features/Login/Login.schema";
 import { client } from "./client";
 
 const login = async (data: LoginFormData) => {
